@@ -20,30 +20,42 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('App: Inicializando onAuthStateChanged');
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      console.log('App: Auth state changed, user:', currentUser?.email);
       if (currentUser) {
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        if (userDoc.exists()) {
-          setUser(currentUser);
-          setRole(userDoc.data().role);
-          setUserName(userDoc.data().name);
-          setLoading(false);
-        } else if (currentUser.email === 'emailparasiteslixo@gmail.com') {
-          // Allow admin to access even if not in users collection (for first setup)
-          setUser(currentUser);
-          setRole('admin');
-          setUserName('Administrador');
-          setLoading(false);
-        } else {
-          // Not authorized
-          await auth.signOut();
-          alert('Acesso não autorizado. Entre em contato com o administrador para ser cadastrado.');
-          setUser(null);
-          setRole(null);
-          setUserName(null);
+        try {
+          console.log('App: Buscando documento do usuário:', currentUser.uid);
+          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+          console.log('App: Documento encontrado?', userDoc.exists());
+          
+          if (userDoc.exists()) {
+            console.log('App: Dados do usuário:', userDoc.data());
+            setUser(currentUser);
+            setRole(userDoc.data().role);
+            setUserName(userDoc.data().name);
+            setLoading(false);
+          } else if (currentUser.email === 'emailparasiteslixo@gmail.com') {
+            console.log('App: Usuário não encontrado, mas é o admin padrão.');
+            setUser(currentUser);
+            setRole('admin');
+            setUserName('Administrador');
+            setLoading(false);
+          } else {
+            console.log('App: Usuário não autorizado.');
+            await auth.signOut();
+            alert('Acesso não autorizado. Entre em contato com o administrador para ser cadastrado.');
+            setUser(null);
+            setRole(null);
+            setUserName(null);
+            setLoading(false);
+          }
+        } catch (error) {
+          console.error('App: Erro ao buscar documento do usuário:', error);
           setLoading(false);
         }
       } else {
+        console.log('App: Usuário não logado.');
         setUser(null);
         setRole(null);
         setUserName(null);
