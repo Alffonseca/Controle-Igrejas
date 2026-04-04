@@ -59,6 +59,8 @@ export default function Layout({ role, userName }: LayoutProps) {
       { to: '/settings', icon: SettingsIcon, label: 'Ajustes' }
     ] : [])
   ];
+  
+  console.log('Layout: Role recebido:', role, 'navItems length:', navItems.length);
 
   return (
     <div className="flex min-h-screen flex-col bg-zinc-50">
