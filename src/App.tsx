@@ -70,10 +70,13 @@ export default function App() {
   }, []);
 
   if (loading) {
-    console.log('App: Ainda carregando...');
+    return (
+      <div className="flex h-screen items-center justify-center bg-zinc-50">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-zinc-900 border-t-transparent"></div>
+      </div>
+    );
   }
 
-  console.log('App: Renderizando rotas. User:', user, 'Role:', role);
   return (
     <HashRouter>
       <Routes>
