@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, or, where } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, or, where, deleteDoc, doc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { Send } from 'lucide-react';
 
@@ -26,11 +26,7 @@ export default function Chat() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!auth.currentUser) {
-      setMessages([]);
-      setUsers([]);
-      return;
-    }
+    if (!auth.currentUser) return;
 
     const q = query(
       collection(db, 'messages'),
@@ -74,6 +70,14 @@ export default function Chat() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  const handleClearChat = async () => {
+    if (!confirm('Tem certeza que deseja limpar esta conversa?')) return;
+    
+    for (const msg of filteredMessages) {
+      await deleteDoc(doc(db, 'messages', msg.id));
+    }
+  };
+
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newMessage.trim() || !auth.currentUser) return;
@@ -113,11 +117,12 @@ export default function Chat() {
             </option>
           ))}
         </select>
+        <button onClick={handleClearChat} className="mt-2 text-xs text-red-500 hover:underline">Limpar conversa</button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {filteredMessages.map(message => (
           <div key={message.id} className={`flex flex-col ${message.senderUid === auth.currentUser?.uid ? 'items-end' : 'items-start'}`}>
-            <span className="text-xs text-zinc-500">{message.senderName} {message.recipientUid ? '(Privado)' : ''}</span>
+            <span className="text-xs text-zinc-500">{message.senderName} {(!message.recipientUid || message.recipientUid === 'public') ? '(Público)' : '(Privado)'}</span>
             <div className={`rounded-xl px-4 py-2 max-w-[80%] ${message.senderUid === auth.currentUser?.uid ? 'bg-zinc-900 text-white' : 'bg-zinc-100 text-zinc-900'}`}>
               {message.text}
             </div>
