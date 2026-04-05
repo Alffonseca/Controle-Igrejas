@@ -3,9 +3,10 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signInWithPopup, 
-  GoogleAuthProvider 
+  GoogleAuthProvider,
+  signOut
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp, addDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, addDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '../firebase';
 import { LogIn, User as UserIcon, Lock, Globe, AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -89,6 +90,24 @@ export default function Login() {
 
     const email = username.trim().includes('@') ? username.trim() : `${username.trim()}@gestao.igreja`;
 
+    // Verifica se já está logado
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where('email', '==', email));
+    const querySnapshot = await getDocs(q);
+    if (!querySnapshot.empty) {
+        const userDoc = querySnapshot.docs[0];
+        const userData = userDoc.data();
+        const now = new Date().getTime();
+        const lastSeen = userData.lastSeen?.toDate().getTime() || 0;
+        const isOnline = (now - lastSeen) < 5 * 60 * 1000; // 5 minutos
+        
+        if (isOnline) {
+            setError('Usuário já logado.');
+            setLoading(false);
+            return;
+        }
+    }
+
     const timeoutPromise = new Promise((_, reject) => 
       setTimeout(() => reject(new Error('Tempo de login esgotado (15s)')), 15000)
     );
@@ -151,6 +170,23 @@ export default function Login() {
       const loginPromise = signInWithPopup(auth, provider);
       const result = await Promise.race([loginPromise, timeoutPromise]) as any;
       const user = result.user;
+      
+      // Verifica se já está logado
+      const userDocCheck = await getDoc(doc(db, 'users', user.uid));
+      if (userDocCheck.exists()) {
+        const userData = userDocCheck.data();
+        const now = new Date().getTime();
+        const lastSeen = userData.lastSeen?.toDate().getTime() || 0;
+        const isOnline = (now - lastSeen) < 5 * 60 * 1000; // 5 minutos
+        
+        if (isOnline) {
+            await signOut(auth);
+            setError('Usuário já logado.');
+            setLoading(false);
+            return;
+        }
+      }
+
       await addDoc(collection(db, 'logs'), { 
         email: user.email, 
         action: 'Login Google', 
