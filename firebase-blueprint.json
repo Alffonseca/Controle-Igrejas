@@ -9,6 +9,8 @@
         "name": { "type": "string", "description": "Full name" },
         "email": { "type": "string", "description": "Email address" },
         "role": { "type": "string", "enum": ["admin", "user"], "description": "User role" },
+        "status": { "type": "string", "enum": ["online", "offline"], "description": "Online status" },
+        "lastSeen": { "type": "string", "format": "date-time", "description": "Last seen timestamp" },
         "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" }
       },
       "required": ["uid", "name", "email", "role"]

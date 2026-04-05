@@ -24,6 +24,7 @@ interface LayoutProps {
 }
 
 export default function Layout({ role, userName }: LayoutProps) {
+  console.log('Layout: userName recebido:', userName);
   const navigate = useNavigate();
   const [churchSettings, setChurchSettings] = useState<{ name: string; logoUrl?: string } | null>(null);
 
@@ -88,7 +89,7 @@ export default function Layout({ role, userName }: LayoutProps) {
         </div>
         <div className="flex items-center gap-3">
           {userName && (
-            <span className="text-sm font-medium text-zinc-600 hidden sm:block">
+            <span className="text-sm font-medium text-zinc-600">
               {userName}
             </span>
           )}

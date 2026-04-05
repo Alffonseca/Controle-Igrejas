@@ -15,6 +15,7 @@ interface Message {
 interface User {
   uid: string;
   name: string;
+  status: 'online' | 'offline';
 }
 
 export default function Chat() {
@@ -26,17 +27,21 @@ export default function Chat() {
 
   useEffect(() => {
     const q = query(collection(db, 'messages'), orderBy('createdAt', 'asc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const unsubscribeMessages = onSnapshot(q, (snapshot) => {
+      console.log('Chat: Mensagens recebidas:', snapshot.docs.length);
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Message)));
     });
-    
-    const fetchUsers = async () => {
-      const usersSnapshot = await getDocs(collection(db, 'users'));
-      setUsers(usersSnapshot.docs.map(doc => ({ uid: doc.id, name: doc.data().name } as User)));
-    };
-    fetchUsers();
 
-    return () => unsubscribe();
+    const usersQuery = query(collection(db, 'users'));
+    const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
+      console.log('Chat: Usuários recebidos:', snapshot.docs.length);
+      setUsers(snapshot.docs.map(doc => ({ uid: doc.id, name: doc.data().name, status: doc.data().status || 'offline' } as User)));
+    });
+
+    return () => {
+      unsubscribeMessages();
+      unsubscribeUsers();
+    };
   }, []);
 
   useEffect(() => {
@@ -74,7 +79,9 @@ export default function Chat() {
         <select value={recipientUid} onChange={(e) => setRecipientUid(e.target.value)} className="w-full rounded-lg border border-zinc-200 px-4 py-2 outline-none">
           <option value="all">Todos (Público)</option>
           {users.filter(u => u.uid !== auth.currentUser?.uid).map(user => (
-            <option key={user.uid} value={user.uid}>{user.name}</option>
+            <option key={user.uid} value={user.uid}>
+              {user.name} {user.status === 'online' ? '🟢' : '🔴'}
+            </option>
           ))}
         </select>
       </div>

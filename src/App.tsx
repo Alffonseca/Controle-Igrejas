@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './firebase';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
@@ -35,9 +35,11 @@ export default function App() {
           
           if (userDoc.exists()) {
             console.log('App: Dados do usuário:', userDoc.data());
+            await setDoc(userDocRef, { status: 'online', lastSeen: serverTimestamp() }, { merge: true });
             setUser(currentUser);
             setRole(userDoc.data().role);
             setUserName(userDoc.data().name);
+            console.log('App: userName definido como:', userDoc.data().name);
             setLoading(false);
             console.log('App: Estados atualizados.');
           } else if (currentUser.email === 'emailparasiteslixo@gmail.com') {
