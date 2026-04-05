@@ -40,7 +40,13 @@ export default function Chat() {
     const usersQuery = query(collection(db, 'users'));
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
       console.log('Chat: Usuários recebidos:', snapshot.docs.length);
-      setUsers(snapshot.docs.map(doc => ({ uid: doc.id, name: doc.data().name, status: doc.data().status || 'offline' } as User)));
+      const now = new Date().getTime();
+      setUsers(snapshot.docs.map(doc => {
+        const data = doc.data();
+        const lastSeen = data.lastSeen?.toDate().getTime() || 0;
+        const isOnline = (now - lastSeen) < 5 * 60 * 1000; // 5 minutos
+        return { uid: doc.id, name: data.name, status: isOnline ? 'online' : 'offline' } as User;
+      }));
     }, (error) => {
       console.error('Chat: Erro ao ler usuários:', error);
     });

@@ -175,6 +175,7 @@ service cloud.firestore {
 
     match /messages/{messageId} {
       allow read: if isRegistered() && (
+        isAdmin() ||
         resource.data.recipientUid == request.auth.uid || 
         resource.data.senderUid == request.auth.uid ||
         resource.data.recipientUid == null
