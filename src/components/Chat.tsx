@@ -26,7 +26,11 @@ export default function Chat() {
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!auth.currentUser) return;
+    if (!auth.currentUser) {
+      setMessages([]);
+      setUsers([]);
+      return;
+    }
 
     const q = query(
       collection(db, 'messages'),
@@ -88,14 +92,13 @@ export default function Chat() {
   };
 
   const filteredMessages = messages.filter(msg => {
-    const isPublic = !msg.recipientUid;
+    const isPublic = !msg.recipientUid || msg.recipientUid === 'public';
     const isPrivateForMe = msg.recipientUid === auth.currentUser?.uid && msg.senderUid === recipientUid;
     const isPrivateFromMe = msg.senderUid === auth.currentUser?.uid && msg.recipientUid === recipientUid;
     
     if (recipientUid === 'all') return isPublic;
     
     const isMatch = isPrivateForMe || isPrivateFromMe;
-    if (isMatch) console.log('Chat: Mensagem filtrada (match):', msg);
     return isMatch;
   });
 
