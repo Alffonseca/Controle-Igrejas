@@ -35,16 +35,11 @@ export default function App() {
           
           if (userDoc.exists()) {
             const data = userDoc.data();
-            console.log('App: Dados do usuário:', data);
-            console.log('App: UID do usuário logado:', currentUser.uid);
-            console.log('App: Nome buscado:', data.name);
             await setDoc(userDocRef, { status: 'online', lastSeen: serverTimestamp() }, { merge: true });
             setUser(currentUser);
             setRole(data.role);
             setUserName(data.name);
-            console.log('App: userName definido como:', data.name);
             setLoading(false);
-            console.log('App: Estados atualizados.');
           } else if (currentUser.email === 'emailparasiteslixo@gmail.com') {
             console.log('App: Usuário não encontrado, mas é o admin padrão.');
             setUser(currentUser);
@@ -106,7 +101,7 @@ export default function App() {
       <Routes>
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
         
-        <Route element={user ? <Layout role={role} userName={userName} /> : <Navigate to="/login" />}>
+        <Route element={user ? <Layout key={user.uid} role={role} userName={userName} /> : <Navigate to="/login" />}>
           <Route path="/" element={role === 'cell' ? <Navigate to="/cells" /> : <Dashboard />} />
           <Route path="/transactions" element={role === 'cell' ? <Navigate to="/cells" /> : <Transactions />} />
           <Route path="/cells" element={<Cells />} />
