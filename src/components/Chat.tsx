@@ -39,7 +39,7 @@ export default function Chat() {
 
     const usersQuery = query(collection(db, 'users'));
     const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
-      console.log('Chat: Usuários recebidos:', snapshot.docs.length);
+      console.log('Chat: Usuários recebidos:', snapshot.docs.map(d => ({id: d.id, ...d.data()})));
       const now = new Date().getTime();
       setUsers(snapshot.docs.map(doc => {
         const data = doc.data();
