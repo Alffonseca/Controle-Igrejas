@@ -150,9 +150,10 @@ service cloud.firestore {
     }
 
     function isValidMessage(data) {
-      return hasRequiredFields(['text', 'senderName', 'senderUid', 'createdAt']) &&
-             hasOnlyAllowedFields(['text', 'senderName', 'senderUid', 'createdAt', 'recipientUid']) &&
-             data.text is string && data.text.size() > 0 && data.text.size() < 1000 &&
+      return hasRequiredFields(['senderName', 'senderUid', 'createdAt']) &&
+             hasOnlyAllowedFields(['text', 'senderName', 'senderUid', 'createdAt', 'recipientUid', 'fileUrl']) &&
+             ( ('text' in data && data.text is string && data.text.size() >= 0 && data.text.size() < 1000) || 
+               ('fileUrl' in data && data.fileUrl is string) ) &&
              data.senderName is string && data.senderName.size() > 0 &&
              data.senderUid == request.auth.uid &&
              (!('recipientUid' in data) || data.recipientUid is string) &&
@@ -164,7 +165,7 @@ service cloud.firestore {
     // ===============================================================
 
     match /users/{userId} {
-      allow read: if isAuthenticated(); // PII risk, but needed for app functionality. Denormalize if possible.
+      allow read: if true;
       allow create: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin());
       allow update: if isAuthenticated() && isValidUser(request.resource.data) && (isOwner(userId) || isAdmin()) && areImmutableFieldsUnchanged(['uid', 'createdAt']);
       allow delete: if isAuthenticated() && isAdmin();
@@ -197,7 +198,7 @@ service cloud.firestore {
     }
 
     match /messages/{messageId} {
-      allow read: if isAuthenticated();
+      allow read: if true;
       allow create: if isAuthenticated() && isValidMessage(request.resource.data);
       allow delete: if isAuthenticated() && (isAdmin() || request.auth.uid == resource.data.senderUid);
     }

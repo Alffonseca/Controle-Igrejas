@@ -3,6 +3,7 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, or, wh
 import { db, auth, storage } from '../firebase';
 import { Send, Trash2, Paperclip, Smile } from 'lucide-react';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { handleFirestoreError, OperationType } from '../lib/errorHandling';
 
 interface Message {
   id: string;
@@ -55,14 +56,20 @@ export default function Chat() {
       // Notificação para novas mensagens privadas
       if (snapshot.docChanges().some(change => change.type === 'added')) {
         const lastMsg = msgs[msgs.length - 1];
-        if (lastMsg.senderUid !== auth.currentUser?.uid && lastMsg.recipientUid === auth.currentUser?.uid && document.hidden) {
-          new Notification('Nova mensagem privada', { body: `${lastMsg.senderName}: ${lastMsg.text}` });
+        if (lastMsg.senderUid !== auth.currentUser?.uid && lastMsg.recipientUid === auth.currentUser?.uid) {
+          // Exibe alerta visual no chat
+          setPrivateMessageAlert({senderName: lastMsg.senderName, senderUid: lastMsg.senderUid});
+          
+          // Notificação do navegador
+          if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+            new Notification('Nova mensagem privada', { body: `${lastMsg.senderName}: ${lastMsg.text || 'Arquivo enviado'}` });
+          }
         }
       }
       
       setMessages(msgs);
     }, (error) => {
-      console.error('Chat: Erro ao ler mensagens:', error);
+      handleFirestoreError(error, OperationType.LIST, 'messages');
     });
 
     const usersQuery = query(collection(db, 'users'));
@@ -76,7 +83,7 @@ export default function Chat() {
         return { uid: doc.id, name: data.name, status: isOnline ? 'online' : 'offline' } as User;
       }));
     }, (error) => {
-      console.error('Chat: Erro ao ler usuários:', error);
+      handleFirestoreError(error, OperationType.LIST, 'users');
     });
 
     return () => {
@@ -93,12 +100,20 @@ export default function Chat() {
     // Removido o confirm() pois ele não funciona dentro do iframe
     
     for (const msg of filteredMessages) {
-      await deleteDoc(doc(db, 'messages', msg.id));
+      try {
+        await deleteDoc(doc(db, 'messages', msg.id));
+      } catch (error) {
+        handleFirestoreError(error, OperationType.DELETE, `messages/${msg.id}`);
+      }
     }
   };
 
   const handleDeleteMessage = async (messageId: string) => {
-    await deleteDoc(doc(db, 'messages', messageId));
+    try {
+      await deleteDoc(doc(db, 'messages', messageId));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `messages/${messageId}`);
+    }
   };
 
   const handleSendMessage = async (e?: React.FormEvent, fileUrl?: string) => {
@@ -115,19 +130,33 @@ export default function Chat() {
       fileUrl: fileUrl || null
     };
     
-    await addDoc(collection(db, 'messages'), messageData);
+    try {
+      await addDoc(collection(db, 'messages'), messageData);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, 'messages');
+    }
     setNewMessage('');
   };
+
+  const [fileUploadError, setFileUploadError] = useState<string | null>(null);
+  const [privateMessageAlert, setPrivateMessageAlert] = useState<{senderName: string, senderUid: string} | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !auth.currentUser) return;
     
-    const storageRef = ref(storage, `chat/${auth.currentUser.uid}/${Date.now()}_${file.name}`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    
-    await handleSendMessage(undefined, url);
+    setFileUploadError(null);
+    try {
+      const storageRef = ref(storage, `chat/${auth.currentUser.uid}/${Date.now()}_${file.name}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      
+      await handleSendMessage(undefined, url);
+    } catch (error) {
+      console.error('Erro no upload:', error);
+      setFileUploadError('Não foi possível enviar o arquivo. Verifique sua conexão.');
+      setTimeout(() => setFileUploadError(null), 5000);
+    }
   };
 
   const filteredMessages = messages.filter(msg => {
@@ -155,6 +184,13 @@ export default function Chat() {
         <button onClick={handleClearChat} className="mt-2 text-xs text-red-500 hover:underline">Limpar conversa</button>
       </div>
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {privateMessageAlert && (
+          <div className="fixed top-20 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50 flex items-center gap-4">
+            <span>Nova mensagem privada de {privateMessageAlert.senderName}</span>
+            <button onClick={() => { setRecipientUid(privateMessageAlert.senderUid); setPrivateMessageAlert(null); }} className="bg-white text-blue-600 px-2 py-1 rounded text-sm font-bold">Ver</button>
+            <button onClick={() => setPrivateMessageAlert(null)} className="text-white font-bold">X</button>
+          </div>
+        )}
         {filteredMessages.map(message => (
           <div key={message.id} className={`flex flex-col ${message.senderUid === auth.currentUser?.uid ? 'items-end' : 'items-start'}`}>
             <span className="text-xs text-zinc-500">{message.senderName} {(!message.recipientUid || message.recipientUid === 'public') ? '(Público)' : '(Privado)'}</span>
@@ -183,6 +219,11 @@ export default function Chat() {
         <button type="button" onClick={() => fileInputRef.current?.click()} className="text-zinc-500 hover:text-zinc-900"><Paperclip size={20} /></button>
         <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
         <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Digite sua mensagem..." className="flex-1 rounded-lg border border-zinc-200 px-4 py-2 outline-none" />
+        {fileUploadError && (
+          <div className="absolute bottom-16 right-4 bg-red-100 text-red-700 px-4 py-2 rounded-lg text-sm">
+            {fileUploadError}
+          </div>
+        )}
         {showEmojis && (
           <div className="absolute bottom-16 left-4 bg-white border border-zinc-200 rounded-lg p-2 shadow-lg flex gap-2">
             {['😀', '😂', '😍', '👍', '🙏', '🔥'].map(emoji => (
