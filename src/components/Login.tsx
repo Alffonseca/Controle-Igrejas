@@ -111,13 +111,22 @@ export default function Login() {
             const now = new Date().getTime();
             const lastSeen = userData.lastSeen?.toDate().getTime() || 0;
             const isOnline = (now - lastSeen) < 5 * 60 * 1000; // 5 minutos
+            console.log('Login: Verificando status:', { now, lastSeen, diff: now - lastSeen, isOnline });
             
             if (isOnline) {
-                console.log('Login: Usuário já online.');
-                await signOut(auth);
-                setError('Usuário já logado.');
-                setLoading(false);
-                return;
+                console.log('Login: Usuário já online. Derrubando sessão anterior...');
+                
+                // Opção 1: Derrubar a sessão anterior forçando o update do lastSeen para algo antigo
+                // ou simplesmente prosseguir e sobrescrever o status.
+                // Como o App.tsx atualiza o lastSeen no useEffect, ao logar aqui, 
+                // o App.tsx da outra máquina eventualmente perceberá que não é mais o "ativo".
+                
+                // Para garantir que a sessão anterior seja derrubada, vamos atualizar o documento
+                // do usuário no Firestore com o novo UID de sessão ou apenas prosseguir.
+                // O comportamento mais simples e eficaz é prosseguir com o login,
+                // sobrescrevendo o status 'online' para esta nova sessão.
+                
+                console.log('Login: Prosseguindo com login e sobrescrevendo sessão anterior.');
             }
         }
         console.log('Login: Usuário não está online, prosseguindo...');
@@ -129,7 +138,7 @@ export default function Login() {
           timestamp: serverTimestamp() 
         });
       } catch (err: any) {
-        console.log('Login: Erro no login inicial:', err.message);
+        console.log('Login: Erro no login inicial:', err.code, err.message);
         // Se for o admin padrao e nao conseguir logar, tenta criar a conta
         if (username === 'admin' && password === 'Jesus2512') {
           try {
@@ -161,7 +170,13 @@ export default function Login() {
       }
     } catch (err: any) {
       console.error('Login Error:', err.code, err.message);
-      setError(err.message === 'Tempo de login esgotado (15s)' ? err.message : 'Usuario ou senha invalidos. Tente novamente.');
+      let errorMessage = 'Erro ao realizar login. Tente novamente.';
+      if (err.code === 'auth/invalid-credential') {
+        errorMessage = 'Usuário ou senha incorretos.';
+      } else if (err.message === 'Tempo de login esgotado (15s)') {
+        errorMessage = err.message;
+      }
+      setError(errorMessage);
     } finally {
       console.log('Login: Finalizando loading.');
       setLoading(false);
@@ -191,10 +206,8 @@ export default function Login() {
         const isOnline = (now - lastSeen) < 5 * 60 * 1000; // 5 minutos
         
         if (isOnline) {
-            await signOut(auth);
-            setError('Usuário já logado.');
-            setLoading(false);
-            return;
+            // await signOut(auth); // Removido daqui, agora permitimos o login e sobrescrevemos a sessão
+            console.log('Login Google: Usuário já online. Prosseguindo com login e sobrescrevendo sessão anterior.');
         }
       }
 

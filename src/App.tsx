@@ -116,15 +116,15 @@ export default function App() {
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
         
         <Route element={user ? <Layout key={user.uid} role={role} userName={userName} /> : <Navigate to="/login" />}>
-          <Route path="/" element={role === 'cell' ? <Navigate to="/cells" /> : <Dashboard />} />
-          <Route path="/transactions" element={role === 'cell' ? <Navigate to="/cells" /> : <Transactions />} />
+          <Route path="/" element={role === 'cell' || role === 'membro' ? <Navigate to="/cells" /> : <Dashboard />} />
+          <Route path="/transactions" element={role === 'cell' || role === 'membro' ? <Navigate to="/cells" /> : <Transactions />} />
           <Route path="/cells" element={<Cells />} />
-          <Route path="/reports" element={<Reports role={role} />} />
-          <Route path="/users" element={role === 'admin' ? <Users /> : <Navigate to="/" />} />
+          <Route path="/reports" element={role === 'membro' ? <Navigate to="/" /> : <Reports role={role} />} />
+          <Route path="/users" element={role === 'admin' || role === 'pastor' || role === 'secretaria' ? <Users /> : <Navigate to="/" />} />
           <Route path="/logs" element={role === 'admin' ? <Logs /> : <Navigate to="/" />} />
           <Route path="/mural" element={<Mural />} />
           <Route path="/chat" element={<Chat />} />
-          <Route path="/settings" element={role === 'admin' ? <Settings /> : <Navigate to="/" />} />
+          <Route path="/settings" element={role === 'admin' || role === 'pastor' ? <Settings role={role} /> : <Navigate to="/" />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" />} />

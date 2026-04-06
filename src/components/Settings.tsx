@@ -16,7 +16,11 @@ interface ChurchSettings {
   titheMessage?: string;
 }
 
-export default function Settings() {
+interface SettingsProps {
+  role: string | null;
+}
+
+export default function Settings({ role }: SettingsProps) {
   const [settings, setSettings] = useState<ChurchSettings>({ name: '', logoUrl: '', pastorName: '', qrCodeUrl: '', titheMessage: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -145,6 +149,23 @@ export default function Settings() {
             </div>
 
             <div className="space-y-2">
+              <label className="text-sm font-bold uppercase tracking-wider text-zinc-500">Logo da Igreja</label>
+              <div className="flex items-center gap-4">
+                <label className="flex flex-1 cursor-pointer items-center justify-center gap-2 rounded-lg border-2 border-dashed border-zinc-200 bg-zinc-50 p-6 transition-all hover:border-zinc-900 hover:bg-zinc-100">
+                  <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
+                  {uploading ? (
+                    <div className="flex items-center gap-2 text-zinc-500"><div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent"></div>Enviando...</div>
+                  ) : (
+                    <div className="flex flex-col items-center gap-1 text-zinc-500"><Upload size={24} /><span className="text-sm font-medium">Selecionar Logo</span></div>
+                  )}
+                </label>
+                {settings.logoUrl && (
+                  <img src={settings.logoUrl} alt="Logo" className="h-20 w-20 rounded-lg object-contain ring-1 ring-zinc-200" referrerPolicy="no-referrer" />
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-2">
               <label className="text-sm font-bold uppercase tracking-wider text-zinc-500">QR Code para Dizimos/Ofertas</label>
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
@@ -178,7 +199,7 @@ export default function Settings() {
                     ) : (
                       <div className="flex flex-col items-center gap-1 text-zinc-500">
                         <Upload size={24} />
-                        <span className="text-sm font-medium">Clique para selecionar QR Code</span>
+                        <span className="text-sm font-medium">Selecionar QR Code</span>
                       </div>
                     )}
                   </label>
@@ -231,7 +252,7 @@ export default function Settings() {
           </div>
         </motion.form>
         <BackupRestore />
-        <ResetData />
+        {role === 'admin' && <ResetData />}
       </div>
     </div>
   );

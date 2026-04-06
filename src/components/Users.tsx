@@ -15,7 +15,7 @@ interface UserProfile {
   uid?: string;
   name: string;
   email: string;
-  role: 'admin' | 'user' | 'cell' | 'pre-admin';
+  role: 'admin' | 'user' | 'cell' | 'pastor' | 'secretaria' | 'membro';
   createdAt: any;
 }
 
@@ -34,7 +34,7 @@ export default function Users() {
     name: '',
     email: '',
     password: '',
-    role: 'user' as 'admin' | 'user' | 'cell' | 'pre-admin'
+    role: 'user' as 'admin' | 'user' | 'cell' | 'pastor' | 'secretaria' | 'membro'
   });
 
   useEffect(() => {
@@ -240,7 +240,12 @@ export default function Users() {
       </header>
 
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {users.map((user) => (
+        {users.filter(user => {
+          if (currentUserProfile?.role === 'admin') return true;
+          if (currentUserProfile?.role === 'pastor') return user.role !== 'admin';
+          if (currentUserProfile?.role === 'secretaria') return user.role !== 'admin' && user.role !== 'pastor';
+          return false;
+        }).map((user) => (
           <motion.div
             key={user.id}
             initial={{ opacity: 0, scale: 0.95 }}
@@ -253,7 +258,13 @@ export default function Users() {
             )}>
               {user.role === 'admin' ? <Shield size={32} /> : <UserIcon size={32} />}
             </div>
-            <h3 className="text-lg font-bold text-zinc-900">{user.name}</h3>
+            <h3 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
+              {user.name}
+              <div className={cn(
+                "h-2.5 w-2.5 rounded-full border-2 border-white",
+                (user as any).status === 'online' ? "bg-emerald-500" : "bg-rose-500"
+              )} title={(user as any).status === 'online' ? 'Online' : 'Offline'} />
+            </h3>
             <p className="text-sm text-zinc-500">
               {user.email.endsWith(INTERNAL_DOMAIN) 
                 ? user.email.replace(INTERNAL_DOMAIN, '') 
@@ -261,9 +272,18 @@ export default function Users() {
             </p>
             <span className={cn(
               "mt-3 inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider",
-              user.role === 'admin' ? "bg-zinc-900 text-white" : user.role === 'cell' ? "bg-zinc-200 text-zinc-800" : user.role === 'pre-admin' ? "bg-amber-100 text-amber-800" : "bg-zinc-100 text-zinc-600"
+              user.role === 'admin' ? "bg-zinc-900 text-white" : 
+              user.role === 'pastor' ? "bg-purple-100 text-purple-800" :
+              user.role === 'secretaria' ? "bg-blue-100 text-blue-800" :
+              user.role === 'cell' ? "bg-zinc-200 text-zinc-800" : 
+              user.role === 'membro' ? "bg-emerald-100 text-emerald-800" :
+              "bg-zinc-100 text-zinc-600"
             )}>
-              {user.role === 'admin' ? 'Administrador' : user.role === 'cell' ? 'Celula' : user.role === 'pre-admin' ? 'Pre-Admin' : 'Usuario'}
+              {user.role === 'admin' ? 'Administrador' : 
+               user.role === 'pastor' ? 'Pastor' :
+               user.role === 'secretaria' ? 'Secretaria' :
+               user.role === 'cell' ? 'Celula' : 
+               user.role === 'membro' ? 'Membro' : 'Usuario'}
             </span>
 
             <div className="mt-6 flex w-full gap-2 border-t border-zinc-100 pt-4">
@@ -384,8 +404,10 @@ export default function Users() {
                   >
                     <option value="user">Usuario Comum</option>
                     <option value="admin">Administrador</option>
-                    <option value="pre-admin">Pre-Admin</option>
+                    <option value="pastor">Pastor</option>
+                    <option value="secretaria">Secretaria</option>
                     <option value="cell">Celula</option>
+                    <option value="membro">Membro</option>
                   </select>
                 </div>
 

@@ -57,18 +57,24 @@ export default function Layout({ role, userName }: LayoutProps) {
   };
 
   const navItems = [
-    ...(role !== 'cell' ? [
+    ...(role !== 'cell' && role !== 'membro' ? [
       { to: '/', icon: LayoutDashboard, label: 'Principal' },
       { to: '/transactions', icon: ArrowLeftRight, label: 'Lancamentos' },
     ] : []),
-    { to: '/cells', icon: UsersIcon, label: 'Celulas' },
-    { to: '/reports', icon: FileText, label: 'Relatorios' },
+    ...(role !== 'membro' ? [
+      { to: '/cells', icon: UsersIcon, label: 'Celulas' },
+      { to: '/reports', icon: FileText, label: 'Relatorios' },
+    ] : []),
     { to: '/mural', icon: ImageIcon, label: 'Mural' },
     { to: '/chat', icon: MessageSquare, label: 'Chat' },
-    ...(role === 'admin' ? [
+    ...(role === 'admin' || role === 'pastor' || role === 'secretaria' ? [
       { to: '/users', icon: Shield, label: 'Usuarios' },
-      { to: '/logs', icon: Clock, label: 'Logs' },
+    ] : []),
+    ...(role === 'admin' || role === 'pastor' ? [
       { to: '/settings', icon: SettingsIcon, label: 'Ajustes' }
+    ] : []),
+    ...(role === 'admin' ? [
+      { to: '/logs', icon: Clock, label: 'Logs' },
     ] : [])
   ];
 
