@@ -86,7 +86,7 @@ export default function Chat() {
   }, [messages]);
 
   const handleClearChat = async () => {
-    if (!confirm('Tem certeza que deseja limpar esta conversa?')) return;
+    // Removido o confirm() pois ele não funciona dentro do iframe
     
     for (const msg of filteredMessages) {
       await deleteDoc(doc(db, 'messages', msg.id));
