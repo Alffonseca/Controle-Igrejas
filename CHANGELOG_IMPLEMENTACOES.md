@@ -36,3 +36,17 @@ Ao iniciar um novo projeto no AI Studio, você pode usar este arquivo como rotei
 
 ---
 *Este documento é um guia de referência para o desenvolvimento do sistema.*
+
+## 7. Alterações Recentes (Versão 2.0.0)
+
+- **Notificações Globais de Mensagens Privadas:**
+  - A lógica de escuta de mensagens foi movida de `Chat.tsx` para `Layout.tsx`.
+  - Implementado alerta visual global que redireciona para o chat.
+  - Adicionado filtro de 5 segundos para evitar alertas de mensagens antigas e verificação para não exibir o alerta se o usuário já estiver na tela de chat.
+
+- **Expansão de Imagens no Mural:**
+  - Adicionada funcionalidade de clique para expandir imagens no `Mural.tsx`.
+  - Implementado modal com fundo desfocado para visualização em tela cheia.
+
+- **Atualização de Versão:**
+  - Versão do projeto atualizada para `2.0.0` no `package.json` e exibida na tela de login (`Login.tsx`).

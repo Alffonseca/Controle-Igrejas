@@ -78,10 +78,14 @@ export default function Dashboard() {
           <h1 className="text-3xl font-bold text-zinc-900">Dashboard</h1>
           <p className="text-zinc-500">Resumo financeiro de {format(new Date(), 'MMMM yyyy', { locale: ptBR })}</p>
         </div>
-        {churchSettings?.qrCodeUrl && (
+        {churchSettings && (churchSettings.qrCodeUrl || churchSettings.titheMessage) && (
           <div className="flex items-center gap-4 rounded-2xl bg-white p-4 shadow-sm ring-1 ring-zinc-200">
-            <img src={churchSettings.qrCodeUrl} alt="QR Code" className="h-16 w-16 object-contain" referrerPolicy="no-referrer" />
-            {churchSettings.titheMessage && <p className="text-sm font-medium text-zinc-700 max-w-[200px]">{churchSettings.titheMessage}</p>}
+            {churchSettings.qrCodeUrl && (
+              <img src={churchSettings.qrCodeUrl} alt="QR Code" className="h-16 w-16 object-contain" referrerPolicy="no-referrer" />
+            )}
+            {churchSettings.titheMessage && (
+              <p className="text-sm font-medium text-zinc-700 max-w-[200px]">{churchSettings.titheMessage}</p>
+            )}
           </div>
         )}
       </header>
